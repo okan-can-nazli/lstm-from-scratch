@@ -83,29 +83,5 @@ class LSTMCell:
     
 
     
-    
-    def forward(self, x, h_prev, C_prev):
-        # Step 1: Concatenate inputs
-        concat = # TODO: combine h_prev and x vertically
-        
-        # Step 2: Forget gate
-        f = # TODO: calculate forget gate using Wf, bf, sigmoid
-        
-        # Step 3: Input gate
-        i = # TODO: calculate input gate using Wi, bi, sigmoid
-        
-        # Step 4: Candidate
-        C_tilde = # TODO: calculate candidate using Wc, bc, tanh
-        
-        # Step 5: Update cell state
-        C_next = # TODO: combine f, C_prev, i, C_tilde
-        
-        # Step 6: Output gate  
-        o = # TODO: calculate output gate using Wo, bo, sigmoid
-        
-        # Step 7: New hidden state
-        h_next = # TODO: combine o and C_next
-        
-        return h_next, C_next
-    
+
     
