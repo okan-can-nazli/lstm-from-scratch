@@ -138,3 +138,94 @@ class LSTMCell:
     
     
     
+    def forward_sequence(self, x_sequence, stm_init, ltm_init):
+        
+        stm_outputs=[]
+        
+        stm_current = stm_init
+        ltm_current = ltm_init
+        
+        for x in x_sequence:
+            stm_current, ltm_current = self.forward(x, stm_current, ltm_current)
+
+            stm_outputs.append(stm_current)
+
+        return stm_outputs, ltm_current
+
+
+# Test code
+if __name__ == "__main__":
+    print("\n" + "="*60)
+    print("TESTING LSTM FORWARD PASS")
+    print("="*60 + "\n")
+    
+    # Create LSTM
+    input_size = 3
+    stm_size = 4
+    lstm = LSTMCell(input_size, stm_size)
+    print(f"✓ Created LSTM (input_size={input_size}, stm_size={stm_size})\n")
+    
+    # Create test inputs
+    x = np.random.randn(input_size, 1) * 0.5
+    stm_prev = np.random.randn(stm_size, 1) * 0.5  
+    ltm_prev = np.random.randn(stm_size, 1) * 0.5
+    
+    print("Input shapes:")
+    print(f"  x: {x.shape}")
+    print(f"  stm_prev: {stm_prev.shape}")
+    print(f"  ltm_prev: {ltm_prev.shape}\n")
+    
+    # Forward pass TESTING
+    stm_next, ltm_next = lstm.forward(x, stm_prev, ltm_prev)
+    
+    print("="*60)
+    print("✅ FORWARD PASS SUCCESSFUL!")
+    print("="*60 + "\n")
+    
+    print("Output shapes:")
+    print(f"  stm_next: {stm_next.shape}")
+    print(f"  ltm_next: {ltm_next.shape}\n")
+    
+    print("Output values:")
+    print(f"  stm_next range: [{stm_next.min():.4f}, {stm_next.max():.4f}]")
+    print(f"  ltm_next range: [{ltm_next.min():.4f}, {ltm_next.max():.4f}]")
+    
+    print("\nstm_next:")
+    print(stm_next)
+    print("\nltm_next:")
+    print(ltm_next)
+    
+    
+    
+    
+    Forward sequence TESTING
+    # Test sequence processing
+    print("\n" + "="*60)
+    print("TESTING SEQUENCE PROCESSING")
+    print("="*60 + "\n")
+    
+    # Create a sequence of 5 timesteps
+    sequence_length = 5
+    x_sequence = [np.random.randn(input_size, 1) * 0.5 for _ in range(sequence_length)]
+    
+    print(f"Created sequence of {sequence_length} timesteps")
+    print(f"Each input shape: {x_sequence[0].shape}\n")
+    
+    # Initial states (zeros)
+    stm_init = np.zeros((stm_size, 1))
+    ltm_init = np.zeros((stm_size, 1))
+    
+    # Process sequence
+    stm_outputs, ltm_final = lstm.forward_sequence(x_sequence, stm_init, ltm_init)
+    
+    print("="*60)
+    print("✅ SEQUENCE PROCESSING SUCCESSFUL!")
+    print("="*60 + "\n")
+    
+    print(f"Processed {len(stm_outputs)} timesteps")
+    print(f"Each STM output shape: {stm_outputs[0].shape}")
+    print(f"Final LTM shape: {ltm_final.shape}\n")
+    
+    print("STM at each timestep:")
+    for t, stm in enumerate(stm_outputs):
+        print(f"  t={t+1}: range [{stm.min():.4f}, {stm.max():.4f}]")
