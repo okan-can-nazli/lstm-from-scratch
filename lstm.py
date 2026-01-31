@@ -312,7 +312,84 @@ class LSTMCell:
 
 
 
+    def backward_sequence(self, dstm_outputs):
+        """
+        Backward pass through a sequence (Backpropagation Through Time - BPTT)
+        
+        Parameters:
+        -----------
+        dstm_outputs : list of gradients for each timestep's stm output
+                    e.g., [dstm_t1, dstm_t2, dstm_t3, dstm_t4, dstm_t5]
+                    Each is shape (stm_size, 1)
+        
+        Returns:
+        --------
+        accumulated_grads : dictionary with accumulated gradients for all weights
+                        These are the TOTAL gradients across all timesteps
+        """
+        
+        """
+        BACKWARD THROUGH TIME:
 
+        Time 3:
+        Input: dstm=0.5, dltm=0
+        Output: dWo=0.03, dstm_prev=0.3, dltm_prev=0.4
+        Accumulate: dWo_total = 0.03
+        Handover: dstm_next=0.3, dltm_next=0.4 →
+
+        Time 2:
+        Input: dstm=0.7, dltm=0.4  ← (received from Time 3)
+        Output: dWo=0.08, dstm_prev=0.2, dltm_prev=0.3
+        Accumulate: dWo_total = 0.03 + 0.08 = 0.11
+        Handover: dstm_next=0.2, dltm_next=0.3 →
+
+        Time 1:
+        Input: dstm=0.8, dltm=0.3  ← (received from Time 2)
+        Output: dWo=0.05, dstm_prev=0.1, dltm_prev=0.2
+        Accumulate: dWo_total = 0.11 + 0.05 = 0.16
+        (No more timesteps)
+
+        FINAL: accumulated_grads['dWo'] = 0.16
+        """
+        # Initialize accumulated gradients (start at zero)
+        accumulated_grads = {
+            'dWo': np.zeros_like(self.Wo),
+            'dbo': np.zeros_like(self.bo),
+            'dWi': np.zeros_like(self.Wi),
+            'dbi': np.zeros_like(self.bi),
+            'dWf': np.zeros_like(self.Wf),
+            'dbf': np.zeros_like(self.bf),
+            'dWc': np.zeros_like(self.Wc),
+            'dbc': np.zeros_like(self.bc)
+        }
+        
+        # Start with zero gradients from "future" (no timestep after the last one)
+        dstm_next = np.zeros((self.stm_size, 1))
+        dltm_next = np.zeros((self.stm_size, 1))
+        
+        # Go backwards through time (from last timestep to first)
+        for t in reversed(range(len(dstm_outputs))):
+            # Add gradient from this timestep's output
+            dstm_next = dstm_next + dstm_outputs[t]
+            
+            # Run backward for this timestep
+            grads = self.backward(dstm_next, dltm_next)
+            
+            # Accumulate weight gradients (add them up across timesteps)
+            accumulated_grads['dWo'] += grads['dWo']
+            accumulated_grads['dbo'] += grads['dbo']
+            accumulated_grads['dWi'] += grads['dWi']
+            accumulated_grads['dbi'] += grads['dbi']
+            accumulated_grads['dWf'] += grads['dWf']
+            accumulated_grads['dbf'] += grads['dbf']
+            accumulated_grads['dWc'] += grads['dWc']
+            accumulated_grads['dbc'] += grads['dbc']
+            
+            # Pass gradients to previous timestep
+            dstm_next = grads['dstm_prev']
+            dltm_next = grads['dltm_prev']
+        
+        return accumulated_grads
 
 
 
@@ -447,3 +524,41 @@ print(f"  dx: {grads['dx'].shape}\n")
 print("Sample gradient values:")
 print(f"  dWf range: [{grads['dWf'].min():.6f}, {grads['dWf'].max():.6f}]")
 print(f"  dstm_prev range: [{grads['dstm_prev'].min():.6f}, {grads['dstm_prev'].max():.6f}]")
+
+
+# Test backward sequence
+print("\n" + "="*60)
+print("TESTING BACKWARD SEQUENCE")
+print("="*60 + "\n")
+
+# Create a sequence and run forward
+sequence_length = 3
+x_sequence = [np.random.randn(input_size, 1) * 0.5 for _ in range(sequence_length)]
+
+stm_init = np.zeros((stm_size, 1))
+ltm_init = np.zeros((stm_size, 1))
+
+stm_outputs, ltm_final = lstm.forward_sequence(x_sequence, stm_init, ltm_init)
+print(f"✓ Forward sequence completed ({sequence_length} timesteps)\n")
+
+# Create gradients for each output
+dstm_outputs = [np.random.randn(stm_size, 1) * 0.1 for _ in range(sequence_length)]
+
+print(f"Created {len(dstm_outputs)} gradient vectors\n")
+
+# Run backward sequence
+accumulated_grads = lstm.backward_sequence(dstm_outputs)
+
+print("="*60)
+print("✅ BACKWARD SEQUENCE SUCCESSFUL!")
+print("="*60 + "\n")
+
+print("Accumulated gradient shapes:")
+print(f"  dWf: {accumulated_grads['dWf'].shape}")
+print(f"  dWi: {accumulated_grads['dWi'].shape}")
+print(f"  dWc: {accumulated_grads['dWc'].shape}")
+print(f"  dWo: {accumulated_grads['dWo'].shape}\n")
+
+print("Sample accumulated gradient values:")
+print(f"  dWf range: [{accumulated_grads['dWf'].min():.6f}, {accumulated_grads['dWf'].max():.6f}]")
+print(f"  dWo range: [{accumulated_grads['dWo'].min():.6f}, {accumulated_grads['dWo'].max():.6f}]")
