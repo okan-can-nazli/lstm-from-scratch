@@ -413,6 +413,10 @@ class LSTMCell:
 
 
 
+
+
+
+"""
 # Test code
 if __name__ == "__main__":
     print("\n" + "="*60)
@@ -614,3 +618,4 @@ if __name__ == "__main__":
         print(f"  Step {i}: {w:.8f}")
 
     print(f"\nTotal change: {lstm.Wf[0,0] - weight_history[0]:.8f}")
+"""
