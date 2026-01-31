@@ -392,8 +392,23 @@ class LSTMCell:
         return accumulated_grads
 
 
-
-
+    def update_weights(self, grads, learning_rate=0.01):
+        
+        # Update output gate
+        self.Wo -= learning_rate * grads['dWo']
+        self.bo -= learning_rate * grads['dbo']
+        
+        # Update input gate
+        self.Wi -= learning_rate * grads['dWi']
+        self.bi -= learning_rate * grads['dbi']
+        
+        # Update forget gate
+        self.Wf -= learning_rate * grads['dWf']
+        self.bf -= learning_rate * grads['dbf']
+        
+        # Update candidate
+        self.Wc -= learning_rate * grads['dWc']
+        self.bc -= learning_rate * grads['dbc']
 
 
 
@@ -477,88 +492,125 @@ if __name__ == "__main__":
         
         
     # Test backward pass
-print("\n" + "="*60)
-print("TESTING BACKWARD PASS")
-print("="*60 + "\n")
+    print("\n" + "="*60)
+    print("TESTING BACKWARD PASS")
+    print("="*60 + "\n")
 
-# First run forward to cache values
-x = np.random.randn(input_size, 1) * 0.5
-stm_prev = np.random.randn(stm_size, 1) * 0.5
-ltm_prev = np.random.randn(stm_size, 1) * 0.5
+    # First run forward to cache values
+    x = np.random.randn(input_size, 1) * 0.5
+    stm_prev = np.random.randn(stm_size, 1) * 0.5
+    ltm_prev = np.random.randn(stm_size, 1) * 0.5
 
-stm_next, ltm_next = lstm.forward(x, stm_prev, ltm_prev)
-print("✓ Forward pass completed (cached values for backward)\n")
+    stm_next, ltm_next = lstm.forward(x, stm_prev, ltm_prev)
+    print("✓ Forward pass completed (cached values for backward)\n")
 
-# Create dummy gradients from "future"
-dstm_next = np.random.randn(stm_size, 1) * 0.1
-dltm_next = np.random.randn(stm_size, 1) * 0.1
+    # Create dummy gradients from "future"
+    dstm_next = np.random.randn(stm_size, 1) * 0.1
+    dltm_next = np.random.randn(stm_size, 1) * 0.1
 
-print("Input gradients:")
-print(f"  dstm_next: {dstm_next.shape}")
-print(f"  dltm_next: {dltm_next.shape}\n")
+    print("Input gradients:")
+    print(f"  dstm_next: {dstm_next.shape}")
+    print(f"  dltm_next: {dltm_next.shape}\n")
 
-# Run backward
-grads = lstm.backward(dstm_next, dltm_next)
+    # Run backward
+    grads = lstm.backward(dstm_next, dltm_next)
 
-print("="*60)
-print("✅ BACKWARD PASS SUCCESSFUL!")
-print("="*60 + "\n")
+    print("="*60)
+    print("✅ BACKWARD PASS SUCCESSFUL!")
+    print("="*60 + "\n")
 
-print("Weight gradient shapes:")
-print(f"  dWf: {grads['dWf'].shape} (should be {lstm.Wf.shape})")
-print(f"  dWi: {grads['dWi'].shape} (should be {lstm.Wi.shape})")
-print(f"  dWc: {grads['dWc'].shape} (should be {lstm.Wc.shape})")
-print(f"  dWo: {grads['dWo'].shape} (should be {lstm.Wo.shape})\n")
+    print("Weight gradient shapes:")
+    print(f"  dWf: {grads['dWf'].shape} (should be {lstm.Wf.shape})")
+    print(f"  dWi: {grads['dWi'].shape} (should be {lstm.Wi.shape})")
+    print(f"  dWc: {grads['dWc'].shape} (should be {lstm.Wc.shape})")
+    print(f"  dWo: {grads['dWo'].shape} (should be {lstm.Wo.shape})\n")
 
-print("Bias gradient shapes:")
-print(f"  dbf: {grads['dbf'].shape} (should be {lstm.bf.shape})")
-print(f"  dbi: {grads['dbi'].shape} (should be {lstm.bi.shape})")
-print(f"  dbc: {grads['dbc'].shape} (should be {lstm.bc.shape})")
-print(f"  dbo: {grads['dbo'].shape} (should be {lstm.bo.shape})\n")
+    print("Bias gradient shapes:")
+    print(f"  dbf: {grads['dbf'].shape} (should be {lstm.bf.shape})")
+    print(f"  dbi: {grads['dbi'].shape} (should be {lstm.bi.shape})")
+    print(f"  dbc: {grads['dbc'].shape} (should be {lstm.bc.shape})")
+    print(f"  dbo: {grads['dbo'].shape} (should be {lstm.bo.shape})\n")
 
-print("Gradients to pass backward:")
-print(f"  dstm_prev: {grads['dstm_prev'].shape}")
-print(f"  dltm_prev: {grads['dltm_prev'].shape}")
-print(f"  dx: {grads['dx'].shape}\n")
+    print("Gradients to pass backward:")
+    print(f"  dstm_prev: {grads['dstm_prev'].shape}")
+    print(f"  dltm_prev: {grads['dltm_prev'].shape}")
+    print(f"  dx: {grads['dx'].shape}\n")
 
-print("Sample gradient values:")
-print(f"  dWf range: [{grads['dWf'].min():.6f}, {grads['dWf'].max():.6f}]")
-print(f"  dstm_prev range: [{grads['dstm_prev'].min():.6f}, {grads['dstm_prev'].max():.6f}]")
+    print("Sample gradient values:")
+    print(f"  dWf range: [{grads['dWf'].min():.6f}, {grads['dWf'].max():.6f}]")
+    print(f"  dstm_prev range: [{grads['dstm_prev'].min():.6f}, {grads['dstm_prev'].max():.6f}]")
 
 
-# Test backward sequence
-print("\n" + "="*60)
-print("TESTING BACKWARD SEQUENCE")
-print("="*60 + "\n")
+    # Test backward sequence
+    print("\n" + "="*60)
+    print("TESTING BACKWARD SEQUENCE")
+    print("="*60 + "\n")
 
-# Create a sequence and run forward
-sequence_length = 3
-x_sequence = [np.random.randn(input_size, 1) * 0.5 for _ in range(sequence_length)]
+    # Create a sequence and run forward
+    sequence_length = 3
+    x_sequence = [np.random.randn(input_size, 1) * 0.5 for _ in range(sequence_length)]
 
-stm_init = np.zeros((stm_size, 1))
-ltm_init = np.zeros((stm_size, 1))
+    stm_init = np.zeros((stm_size, 1))
+    ltm_init = np.zeros((stm_size, 1))
 
-stm_outputs, ltm_final = lstm.forward_sequence(x_sequence, stm_init, ltm_init)
-print(f"✓ Forward sequence completed ({sequence_length} timesteps)\n")
+    stm_outputs, ltm_final = lstm.forward_sequence(x_sequence, stm_init, ltm_init)
+    print(f"✓ Forward sequence completed ({sequence_length} timesteps)\n")
 
-# Create gradients for each output
-dstm_outputs = [np.random.randn(stm_size, 1) * 0.1 for _ in range(sequence_length)]
+    # Create gradients for each output
+    dstm_outputs = [np.random.randn(stm_size, 1) * 0.1 for _ in range(sequence_length)]
 
-print(f"Created {len(dstm_outputs)} gradient vectors\n")
+    print(f"Created {len(dstm_outputs)} gradient vectors\n")
 
-# Run backward sequence
-accumulated_grads = lstm.backward_sequence(dstm_outputs)
+    # Run backward sequence
+    accumulated_grads = lstm.backward_sequence(dstm_outputs)
 
-print("="*60)
-print("✅ BACKWARD SEQUENCE SUCCESSFUL!")
-print("="*60 + "\n")
+    print("="*60)
+    print("✅ BACKWARD SEQUENCE SUCCESSFUL!")
+    print("="*60 + "\n")
 
-print("Accumulated gradient shapes:")
-print(f"  dWf: {accumulated_grads['dWf'].shape}")
-print(f"  dWi: {accumulated_grads['dWi'].shape}")
-print(f"  dWc: {accumulated_grads['dWc'].shape}")
-print(f"  dWo: {accumulated_grads['dWo'].shape}\n")
+    print("Accumulated gradient shapes:")
+    print(f"  dWf: {accumulated_grads['dWf'].shape}")
+    print(f"  dWi: {accumulated_grads['dWi'].shape}")
+    print(f"  dWc: {accumulated_grads['dWc'].shape}")
+    print(f"  dWo: {accumulated_grads['dWo'].shape}\n")
 
-print("Sample accumulated gradient values:")
-print(f"  dWf range: [{accumulated_grads['dWf'].min():.6f}, {accumulated_grads['dWf'].max():.6f}]")
-print(f"  dWo range: [{accumulated_grads['dWo'].min():.6f}, {accumulated_grads['dWo'].max():.6f}]")
+    print("Sample accumulated gradient values:")
+    print(f"  dWf range: [{accumulated_grads['dWf'].min():.6f}, {accumulated_grads['dWf'].max():.6f}]")
+    print(f"  dWo range: [{accumulated_grads['dWo'].min():.6f}, {accumulated_grads['dWo'].max():.6f}]")
+        
+    # Test training over multiple steps
+    print("\n" + "="*60)
+    print("TESTING TRAINING LOOP (10 STEPS)")
+    print("="*60 + "\n")
+
+    # Track one weight over time
+    weight_history = []
+
+    for step in range(10):
+        # Save current weight
+        weight_history.append(lstm.Wf[0,0])
+        
+        # Forward pass
+        x = np.random.randn(input_size, 1) * 0.5
+        stm_prev = np.random.randn(stm_size, 1) * 0.5
+        ltm_prev = np.random.randn(stm_size, 1) * 0.5
+        
+        stm_next, ltm_next = lstm.forward(x, stm_prev, ltm_prev)
+        
+        # Backward pass
+        dstm_next = np.random.randn(stm_size, 1) * 0.1
+        dltm_next = np.random.randn(stm_size, 1) * 0.1
+        
+        grads = lstm.backward(dstm_next, dltm_next)
+        
+        # Update weights
+        lstm.update_weights(grads, learning_rate=0.01)
+        
+        if step % 2 == 0:  # Print every 2 steps
+            print(f"Step {step}: Wf[0,0] = {lstm.Wf[0,0]:.8f}")
+
+    print("\nWeight history:")
+    for i, w in enumerate(weight_history):
+        print(f"  Step {i}: {w:.8f}")
+
+    print(f"\nTotal change: {lstm.Wf[0,0] - weight_history[0]:.8f}")
