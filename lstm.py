@@ -55,6 +55,7 @@ class LSTMCell:
         # Why combined? We stack [stm_prev, x] but matrix treats each POSITION differently via separate column weights
         # Left columns learn "how does PAST affect decision", Right columns learn "how does PRESENT affect decision"
         
+        
         self.bf = np.zeros((stm_size, 1))
         # Initialized to zero (network will learn the right baseline during training)
         
@@ -101,6 +102,8 @@ class LSTMCell:
         ltm_next : numpy array, shape (stm_size, 1)
             New long-term memory
         """
+        
+        #we care "axb . bxc" so we can calculate dot product
         
         # Step 1: Concatenate previous STM and current input
         combined_input = np.concatenate([stm_prev, x], axis=0) #matrix merge
@@ -172,11 +175,15 @@ class LSTMCell:
         We calculate gradients (mistake counters) for all weights.
         These tell us how to update weights to reduce error.
         """        
-        
+        #we want to declare every gradiant based on dstm because we assume that we already got it.
             
         # Start with gradient from future
         dstm = dstm_next  # dLoss/dstm
                     
+                    
+        #stm_next = output_gate * tanh(ltm_next)
+        #========================================
+                
         # Gradient for output_gate
         # dLoss/doutput_gate = dLoss/dstm × dstm/doutput_gate
         # Partner rule: dstm/doutput_gate = tanh(ltm_next)
@@ -372,7 +379,7 @@ class LSTMCell:
             # Add gradient from this timestep's output
             dstm_next = dstm_next + dstm_outputs[t]
             
-            # Run backward for this timestep
+            # Run backward for THİS timestep
             grads = self.backward(dstm_next, dltm_next)
             
             # Accumulate weight gradients (add them up across timesteps)
@@ -394,8 +401,10 @@ class LSTMCell:
 
     def update_weights(self, grads, learning_rate=0.01):
         
+        #There is -= causing of: If gradient is positive → subtract makes weight smaller. If gradient is negative → subtract (negative) = add, makes weight bigger
+        
         # Update output gate
-        self.Wo -= learning_rate * grads['dWo']
+        self.Wo -= learning_rate * grads['dWo'] 
         self.bo -= learning_rate * grads['dbo']
         
         # Update input gate
