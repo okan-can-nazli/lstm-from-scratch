@@ -106,7 +106,7 @@ class LSTMCell:
         #we care "axb . bxc" so we can calculate dot product
         
         # Step 1: Concatenate previous STM and current input
-        combined_input = np.concatenate([stm_prev, x], axis=0) #matrix merge
+        combined_input = np.concatenate([stm_prev, x.reshape(-1, 1)], axis=0) #matrix merge
         # Shape: (stm_size + input_size, 1)
 
         # Step 2: Forget gate
