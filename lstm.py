@@ -48,8 +48,9 @@ class LSTMCell:
                      (h_prev)     (current input x)
         """
         
-        # Forget gate
         
+        
+        # Forget gate
         self.Wf = np.random.randn(stm_size, stm_size + input_size) * 0.01 
         # Shape: (output_size, combined_input_size)
         # Why combined? We stack [stm_prev, x] but matrix treats each POSITION differently via separate column weights
@@ -106,7 +107,7 @@ class LSTMCell:
         #we care "axb . bxc" so we can calculate dot product
         
         # Step 1: Concatenate previous STM and current input
-        combined_input = np.concatenate([stm_prev, x.reshape(-1, 1)], axis=0) #matrix merge
+        combined_input = np.concatenate([stm_prev, x], axis=0) #matrix merge
         # Shape: (stm_size + input_size, 1)
 
         # Step 2: Forget gate
@@ -157,9 +158,13 @@ class LSTMCell:
         stm_current = stm_init
         ltm_current = ltm_init
         
+    
         for x in x_sequence:
+            
+            x = x.reshape(-1,1) # make 2-d the element in 2-d input matrix (not necessary,it was added to implement a test task however it canceled)
+            
             stm_current, ltm_current = self.forward(x, stm_current, ltm_current)
-
+            
             stm_outputs.append(stm_current)
 
         return stm_outputs, ltm_current
@@ -175,7 +180,7 @@ class LSTMCell:
         We calculate gradients (mistake counters) for all weights.
         These tell us how to update weights to reduce error.
         """        
-        #we want to declare every gradiant based on dstm because we assume that we already got it.
+        #we want to declare every gradiant based on dstm because we assume that we already have it.
             
         # Start with gradient from future
         dstm = dstm_next  # dLoss/dstm
@@ -227,7 +232,6 @@ class LSTMCell:
         
         # ================================================================
         # STEP 6: Gradient through activation functions (before entering act. func. error rate)
-        # Each gate has sigmoid or tanh activation
         # ================================================================
         
         # dLoss/doutput_gate_input = dLoss/doutput_gate × doutput_gate/doutput_gate_input
@@ -335,9 +339,15 @@ class LSTMCell:
                         These are the TOTAL gradients across all timesteps
         """
         
+        
         """
         BACKWARD THROUGH TIME:
-
+        ........
+        .....
+        ...........
+        ...............
+        ...........
+        
         Time 3:
         Input: dstm=0.5, dltm=0
         Output: dWo=0.03, dstm_prev=0.3, dltm_prev=0.4
@@ -419,212 +429,3 @@ class LSTMCell:
         self.Wc -= learning_rate * grads['dWc']
         self.bc -= learning_rate * grads['dbc']
 
-
-
-
-
-
-
-"""
-# Test code
-if __name__ == "__main__":
-    print("\n" + "="*60)
-    print("TESTING LSTM FORWARD PASS")
-    print("="*60 + "\n")
-    
-    # Create LSTM
-    input_size = 3
-    stm_size = 4
-    lstm = LSTMCell(input_size, stm_size)
-    print(f"✓ Created LSTM (input_size={input_size}, stm_size={stm_size})\n")
-    
-    # Create test inputs
-    x = np.random.randn(input_size, 1) * 0.5
-    stm_prev = np.random.randn(stm_size, 1) * 0.5  
-    ltm_prev = np.random.randn(stm_size, 1) * 0.5
-    
-    print("Input shapes:")
-    print(f"  x: {x.shape}")
-    print(f"  stm_prev: {stm_prev.shape}")
-    print(f"  ltm_prev: {ltm_prev.shape}\n")
-    
-    # Forward pass TESTING
-    stm_next, ltm_next = lstm.forward(x, stm_prev, ltm_prev)
-    
-    print("="*60)
-    print("✅ FORWARD PASS SUCCESSFUL!")
-    print("="*60 + "\n")
-    
-    print("Output shapes:")
-    print(f"  stm_next: {stm_next.shape}")
-    print(f"  ltm_next: {ltm_next.shape}\n")
-    
-    print("Output values:")
-    print(f"  stm_next range: [{stm_next.min():.4f}, {stm_next.max():.4f}]")
-    print(f"  ltm_next range: [{ltm_next.min():.4f}, {ltm_next.max():.4f}]")
-    
-    print("\nstm_next:")
-    print(stm_next)
-    print("\nltm_next:")
-    print(ltm_next)
-    
-    
-    
-    
-    #Forward sequence TESTING
-    print("\n" + "="*60)
-    print("TESTING SEQUENCE PROCESSING")
-    print("="*60 + "\n")
-    
-    # Create a sequence of 5 timesteps
-    sequence_length = 5
-    x_sequence = [np.random.randn(input_size, 1) * 0.5 for _ in range(sequence_length)]
-    
-    print(f"Created sequence of {sequence_length} timesteps")
-    print(f"Each input shape: {x_sequence[0].shape}\n")
-    
-    # Initial states (zeros)
-    stm_init = np.zeros((stm_size, 1))
-    ltm_init = np.zeros((stm_size, 1))
-    
-    # Process sequence
-    stm_outputs, ltm_final = lstm.forward_sequence(x_sequence, stm_init, ltm_init)
-    
-    print("="*60)
-    print("✅ SEQUENCE PROCESSING SUCCESSFUL!")
-    print("="*60 + "\n")
-    
-    print(f"Processed {len(stm_outputs)} timesteps")
-    print(f"Each STM output shape: {stm_outputs[0].shape}")
-    print(f"Final LTM shape: {ltm_final.shape}\n")
-    
-    print("STM at each timestep:")
-    for t, stm in enumerate(stm_outputs):
-        print(f"  t={t+1}: range [{stm.min():.4f}, {stm.max():.4f}]")
-        
-        
-        
-    # Test backward pass
-    print("\n" + "="*60)
-    print("TESTING BACKWARD PASS")
-    print("="*60 + "\n")
-
-    # First run forward to cache values
-    x = np.random.randn(input_size, 1) * 0.5
-    stm_prev = np.random.randn(stm_size, 1) * 0.5
-    ltm_prev = np.random.randn(stm_size, 1) * 0.5
-
-    stm_next, ltm_next = lstm.forward(x, stm_prev, ltm_prev)
-    print("✓ Forward pass completed (cached values for backward)\n")
-
-    # Create dummy gradients from "future"
-    dstm_next = np.random.randn(stm_size, 1) * 0.1
-    dltm_next = np.random.randn(stm_size, 1) * 0.1
-
-    print("Input gradients:")
-    print(f"  dstm_next: {dstm_next.shape}")
-    print(f"  dltm_next: {dltm_next.shape}\n")
-
-    # Run backward
-    grads = lstm.backward(dstm_next, dltm_next)
-
-    print("="*60)
-    print("✅ BACKWARD PASS SUCCESSFUL!")
-    print("="*60 + "\n")
-
-    print("Weight gradient shapes:")
-    print(f"  dWf: {grads['dWf'].shape} (should be {lstm.Wf.shape})")
-    print(f"  dWi: {grads['dWi'].shape} (should be {lstm.Wi.shape})")
-    print(f"  dWc: {grads['dWc'].shape} (should be {lstm.Wc.shape})")
-    print(f"  dWo: {grads['dWo'].shape} (should be {lstm.Wo.shape})\n")
-
-    print("Bias gradient shapes:")
-    print(f"  dbf: {grads['dbf'].shape} (should be {lstm.bf.shape})")
-    print(f"  dbi: {grads['dbi'].shape} (should be {lstm.bi.shape})")
-    print(f"  dbc: {grads['dbc'].shape} (should be {lstm.bc.shape})")
-    print(f"  dbo: {grads['dbo'].shape} (should be {lstm.bo.shape})\n")
-
-    print("Gradients to pass backward:")
-    print(f"  dstm_prev: {grads['dstm_prev'].shape}")
-    print(f"  dltm_prev: {grads['dltm_prev'].shape}")
-    print(f"  dx: {grads['dx'].shape}\n")
-
-    print("Sample gradient values:")
-    print(f"  dWf range: [{grads['dWf'].min():.6f}, {grads['dWf'].max():.6f}]")
-    print(f"  dstm_prev range: [{grads['dstm_prev'].min():.6f}, {grads['dstm_prev'].max():.6f}]")
-
-
-    # Test backward sequence
-    print("\n" + "="*60)
-    print("TESTING BACKWARD SEQUENCE")
-    print("="*60 + "\n")
-
-    # Create a sequence and run forward
-    sequence_length = 3
-    x_sequence = [np.random.randn(input_size, 1) * 0.5 for _ in range(sequence_length)]
-
-    stm_init = np.zeros((stm_size, 1))
-    ltm_init = np.zeros((stm_size, 1))
-
-    stm_outputs, ltm_final = lstm.forward_sequence(x_sequence, stm_init, ltm_init)
-    print(f"✓ Forward sequence completed ({sequence_length} timesteps)\n")
-
-    # Create gradients for each output
-    dstm_outputs = [np.random.randn(stm_size, 1) * 0.1 for _ in range(sequence_length)]
-
-    print(f"Created {len(dstm_outputs)} gradient vectors\n")
-
-    # Run backward sequence
-    accumulated_grads = lstm.backward_sequence(dstm_outputs)
-
-    print("="*60)
-    print("✅ BACKWARD SEQUENCE SUCCESSFUL!")
-    print("="*60 + "\n")
-
-    print("Accumulated gradient shapes:")
-    print(f"  dWf: {accumulated_grads['dWf'].shape}")
-    print(f"  dWi: {accumulated_grads['dWi'].shape}")
-    print(f"  dWc: {accumulated_grads['dWc'].shape}")
-    print(f"  dWo: {accumulated_grads['dWo'].shape}\n")
-
-    print("Sample accumulated gradient values:")
-    print(f"  dWf range: [{accumulated_grads['dWf'].min():.6f}, {accumulated_grads['dWf'].max():.6f}]")
-    print(f"  dWo range: [{accumulated_grads['dWo'].min():.6f}, {accumulated_grads['dWo'].max():.6f}]")
-        
-    # Test training over multiple steps
-    print("\n" + "="*60)
-    print("TESTING TRAINING LOOP (10 STEPS)")
-    print("="*60 + "\n")
-
-    # Track one weight over time
-    weight_history = []
-
-    for step in range(10):
-        # Save current weight
-        weight_history.append(lstm.Wf[0,0])
-        
-        # Forward pass
-        x = np.random.randn(input_size, 1) * 0.5
-        stm_prev = np.random.randn(stm_size, 1) * 0.5
-        ltm_prev = np.random.randn(stm_size, 1) * 0.5
-        
-        stm_next, ltm_next = lstm.forward(x, stm_prev, ltm_prev)
-        
-        # Backward pass
-        dstm_next = np.random.randn(stm_size, 1) * 0.1
-        dltm_next = np.random.randn(stm_size, 1) * 0.1
-        
-        grads = lstm.backward(dstm_next, dltm_next)
-        
-        # Update weights
-        lstm.update_weights(grads, learning_rate=0.01)
-        
-        if step % 2 == 0:  # Print every 2 steps
-            print(f"Step {step}: Wf[0,0] = {lstm.Wf[0,0]:.8f}")
-
-    print("\nWeight history:")
-    for i, w in enumerate(weight_history):
-        print(f"  Step {i}: {w:.8f}")
-
-    print(f"\nTotal change: {lstm.Wf[0,0] - weight_history[0]:.8f}")
-"""

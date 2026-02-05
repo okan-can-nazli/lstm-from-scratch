@@ -2,20 +2,42 @@
 from lstm import LSTMCell
 import numpy as np
 
-lstm = LSTMCell(input_size=1, stm_size=1)
+lstm = LSTMCell(input_size=1, stm_size=128)
 
-x_sequence = np.arange(10) # np.arange(10).reshape(-1,1) makes EACH ELEMENT 2-D NOT END VARİABLE ORDER (2-d elements in 1-d array)
-x_sequence = x_sequence.reshape(-1,1) #makes final variable 2-D (1-d elements in 2-d array)
+x_sequence = np.random.rand(100,1)
 
-stm_outputs, ltm_current = lstm.forward_sequence(x_sequence,stm_init=[[0]],ltm_init=[[0]])
+for step in range(5000):
+    stm_outputs, ltm_current = lstm.forward_sequence(x_sequence,stm_init=np.zeros((128,1)),ltm_init=np.zeros((128,1)))
+    stm_outputs = np.array(stm_outputs).reshape(-1, 1) #make it 2-d shape from a list to be able to make operation for all stm values
 
-stm_outputs = np.array(stm_outputs).reshape(-1, 1) #make it 2-d shape from a list to be able to make operation
+    stm_formatted = stm_outputs.reshape(100, 128)
 
-asr = (x_sequence - stm_outputs) ** 2 #find "All Squared Residuals"
+    loss = ((x_sequence - stm_formatted) ** 2).mean() #find "All Squared Residuals" in a matrix shaped (100,1)
 
-ssr = asr.sum() #find "Sum of Squared Residuals"s
 
-accumulated_grads = lstm.backward_sequence(asr)
+    #CHECK THİS PART FOR LATER IT DOESNT MAKE THAT SENSE FOR ME FOR NOW!!!!!
+    #================================================================#
+    loss_gradient = 2 * (stm_formatted - x_sequence) / len(x_sequence)
+    
+    loss_gradient = loss_gradient.reshape(100, 128, 1)
+    
+    accumulated_grads = lstm.backward_sequence(loss_gradient)
+    #================================================================#
 
-lstm.update_weights(accumulated_grads,learning_rate=0.01)
 
+
+
+
+    lstm.update_weights(accumulated_grads,learning_rate=0.01)
+
+
+        
+        
+        
+# Final Test Forward
+final_outputs, _ = lstm.forward_sequence(x_sequence, np.zeros((128,1)), np.zeros((128,1)))
+final_outputs = np.array(final_outputs).reshape(-1, 1)
+
+print("\nInput vs Output:")
+for i, (inp, out) in enumerate(zip(x_sequence, final_outputs)):
+    print(f"{inp[0]:.1f} -> {out[0]:.4f}")
