@@ -1,10 +1,11 @@
-# COPY SEQUENCE TEST TASK
+# COPY SEQUENCE TEST TASK (f(x) = x)
+
 from lstm import LSTMCell
 import numpy as np
 
-all_inputs_size_value = 100
+all_inputs_size_value = 5
 stm_size_value = 128
-loop_count = 100
+loop_count = 5000
 
 lstm = LSTMCell(input_size=1, stm_size=stm_size_value)
 
@@ -17,9 +18,8 @@ for step in range(loop_count):
     stm_reshaped = stm_array.reshape(-1, 128)
     stm_condensed = stm_reshaped.mean(axis=1)
     stm_final = stm_condensed.reshape(-1, 1)
-
-
-
+    
+    
     #CHECK THİS PART FOR LATER IT DOESNT MAKE THAT SENSE FOR ME FOR NOW!!!!!
     #================================================================#
     
@@ -35,9 +35,7 @@ for step in range(loop_count):
     #================================================================#
 
 
-
-
-    lstm.update_weights(accumulated_grads,learning_rate=0.5)
+    lstm.update_weights(accumulated_grads,learning_rate=0.005)
     
     print(f"There are {loop_count - step} more loops left to finish!")
         
