@@ -15,7 +15,7 @@ class RNNCell:
         self.w2 = np.random.rand(hidden_size,hidden_size)
 
         self.w3 = np.random.rand(hidden_size,hidden_size)
-        self.b2 = np.zeros(1,hidden_size)
+        self.b2 = np.zeros((1,hidden_size))
     
         #I could also initialize hidden_state however it is better to get it from user too
         
@@ -40,13 +40,13 @@ class RNNCell:
         
         sum_input = np.dot(x, self.w1) + np.dot(h_prev, self.w2)
         
-        h_next = self.ReLU(sum_input) # It is also output of activation gate
-        step_outputs = np.dot(h_next, self.w3) + self.b2
+        func_out = self.ReLU(sum_input + self.b1) # It is also output of activation gate
+        step_outputs = np.dot(func_out, self.w3) + self.b2
         
-        self.h_next = h_next
+        self.func_out = func_out
         self.step_outputs = step_outputs
         
-        return h_next, step_outputs
+        return func_out, step_outputs
     
     
     def forward_sequence(self,x_sequence, hidden_init):
@@ -63,9 +63,20 @@ class RNNCell:
     
     def backward(self, d_all_outputs):
         
-        dw1 =
-        dw2 =
-        dw3 =
-        db1 =
-        db2 = 
+        d_out_next = d_all_outputs
         
+        
+        # output = (ReLU(x * w1 + h_prev * w2 + b1)* w3) + b2
+        # apply ! THE CHAIN RULE !
+        
+        dfunc = np.dot(d_out_next, self.w3.T)     #TRANSPOSE, HOW DİDNT U EVEN NOTİCE THAT?!  |    d_out_next * self.w3 . T  !!!!
+        
+        dx = np.dot(dfunc, self.w1.T)         #  dfunc * self.w2 . T
+        dh = np.dot(dfunc, self.w2.T)               #  dfunc * self.w2 . T
+        dw1 =               # dfunc * x
+        dw2 =               # dfunc * h
+        dw3 = self.func_out 
+        db1 = 1 * 1 * dfunc 
+        db2 = 1 * dfunc
+        
+    
