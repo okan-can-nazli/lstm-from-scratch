@@ -38,13 +38,17 @@ class RNNCell:
         
         # I prefered "seperate weight application method" (not that much efficient but cleaner)
         
-        sum_input = np.dot(x, self.w1) + np.dot(h_prev, self.w2)
+        sum_input = np.dot(x, self.w1) + np.dot(h_prev, self.w2) # notice that we used these equations on backward
         
         func_out = self.ReLU(sum_input + self.b1) # It is also output of activation gate
-        step_outputs = np.dot(func_out, self.w3) + self.b2
+        step_outputs = np.dot(func_out, self.w3) + self.b2   # notice that we used these equations on backward
         
         self.func_out = func_out
         self.step_outputs = step_outputs
+        
+        self.x = x
+        self.h_prev = h_prev
+        self.sum_input = sum_input
         
         return func_out, step_outputs
     
@@ -73,10 +77,36 @@ class RNNCell:
         
         dx = np.dot(dfunc, self.w1.T)         #  dfunc * self.w2 . T
         dh = np.dot(dfunc, self.w2.T)               #  dfunc * self.w2 . T
-        dw1 =               # dfunc * x
-        dw2 =               # dfunc * h
-        dw3 = self.func_out 
-        db1 = 1 * 1 * dfunc 
-        db2 = 1 * dfunc
+        dw1 = np.dot(self.x.T,dfunc)         # dfunc * x
+        dw2 = np.dot(self.h_prev.T,dfunc)              # dfunc * h
+        dw3 = np.dot(self.func_out.T,d_out_next)
+        db1 = (self.sum_input > 0) * dfunc
+        db2 = d_out_next
         
     
+    
+    
+    
+
+"""
+Simple rule:
+
+In forward pass: output = np.dot(A, B)
+
+In backward pass:
+
+Gradient for A = np.dot(grad, B.T)
+Gradient for B = np.dot(A.T, grad)
+Left side of dot → use right.T Right side of dot → use left.T
+
+
+
+step_outputs = np.dot(func_out, self.w3)
+
+func_out is left → gradient = np.dot(grad, self.w3.T) ✅ (your dfunc)
+self.w3 is right → gradient = np.dot(func_out.T, grad) (your dw3)
+
+sum_input = np.dot(x, self.w1)
+
+x is left → gradient = np.dot(dfunc, self.w1.T) ✅ (your dx)
+self.w1 is right → gradient = np.dot(x.T, dfunc) (your dw1)"""
