@@ -1,0 +1,3 @@
+# This ignores __pycache__ in the root AND all subdirectories
+**/__pycache__/
+*.pyc
